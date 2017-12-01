@@ -104,9 +104,9 @@ String stringifyData(){
   return allData;
 }
 
-// Expected format ?m=101
+// Expected format "101"
 void parseAndServiceRequest(String request){
-  int r = request.substring(3).toInt();
+  int r = request.toInt();
   
   digitalWrite(PIN_FAN ,r & (1<<0));
   digitalWrite(PIN_PUMP,r & (1<<1));
