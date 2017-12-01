@@ -104,7 +104,7 @@ String stringifyData(){
   return allData;
 }
 
-// Expected format "101"
+// Expected format 0 - 7 "b000" - "b111"
 void parseAndServiceRequest(String request){
   int r = request.toInt();
   

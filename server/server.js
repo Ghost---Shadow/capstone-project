@@ -24,13 +24,18 @@ mongoose
 // Load the Metrics module
 var Metrics = require('./models/Metrics.js');
 
+// Forced on
+var forced = 0;
+
 // Take decision based on readings (TODO)
+// "0b000" = FAN-PUMP-LAMP
 function takeDecision(temperature, moisture, light) {
-  var decision = "";
-  decision += temperature > 512 ? "1" : "0";
-  decision += moisture > 512 ? "1" : "0";
-  decision += light > 512 ? "1" : "0";
-  return decision;
+  var decision = 0;
+  decision |= temperature > 512 ? (1 << 0) : 0;
+  decision |= moisture > 512 ? (1 << 1) : 0;
+  decision |= light > 512 ? (1 << 2) : 0;
+  decision |= forced;
+  return decision + "";
 }
 
 function uploadToDatabase(temperature, moisture, light) {
@@ -74,6 +79,7 @@ app.get('/upload', function (req, res) {
  *  "temperature":[355,233,...,343],
  *  "moisture":[355,233,...,343],
  *  "light":[355,233,...,343],
+ *  "light":[355,233,...,343],
  * }
  */
 app.get('/getJson', function (req, res) {
@@ -102,4 +108,20 @@ app.get('/getJson', function (req, res) {
       }
       res.json(result);
     });
+});
+
+/**
+ * Format
+ * /force?f=7
+ * b000 to b111
+ * FAN - PUMP - LIGHT
+ */
+app.get('/force', function (req, res) {
+  try{
+    forced = parseInt(req.query.f);
+    res.send(forced+"");
+  } catch(e) {
+    forced = 0;
+    res.send(e);
+  }
 });
