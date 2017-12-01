@@ -9,6 +9,21 @@ app.listen(8080, function () {
 // Host the public folder 
 app.use(express.static('public'));
 
+// Get Handle for MongoDB through mongoose
+var mongoose = require('mongoose');
+
+// Use native Node promises
+mongoose.Promise = global.Promise;
+
+// connect to MongoDB
+mongoose
+  .connect('mongodb://localhost/CapstoneProject', { useMongoClient: true })
+  .then(() => console.log('Connection succesful'))
+  .catch((err) => console.error(err));
+
+// Load the Metrics module
+var Metrics = require('./models/Metrics.js');
+
 // Take decision based on readings (TODO)
 function takeDecision(temperature, moisture, light) {
   var decision = "";
@@ -19,7 +34,15 @@ function takeDecision(temperature, moisture, light) {
 }
 
 function uploadToDatabase(temperature, moisture, light) {
-  // TODO
+  var newMetric = new Metrics({
+    "temperature": temperature,
+    "moisture": moisture,
+    "light": light,
+    "time": Math.floor(new Date() / 1000)
+  });
+  newMetric.save(function (err) {
+    if (err) return console.log(err);
+  })
 }
 
 /**
@@ -42,19 +65,41 @@ app.get('/upload', function (req, res) {
 });
 
 /**
- * JSON Format
+ * Expected format
+ * /getJson?fetches=50
+ * fetches: Number of records to fetch
+ * 
+ * Output JSON Format
  * {
- *  "temperature":[353,434,545,...,343],
- *  "moisture":[353,434,545,...,343],
- *  "light":[353,434,545,...,343],
+ *  "temperature":[355,233,...,343],
+ *  "moisture":[355,233,...,343],
+ *  "light":[355,233,...,343],
  * }
  */
 app.get('/getJson', function (req, res) {
-  // TODO: Load from database
-  data = {
-    "temperature": [353, 434, 545, 343],
-    "moisture": [353, 434, 545, 343],
-    "light": [353, 434, 545, 343],
+  var result = {
+    "temperature": [],
+    "moisture": [],
+    "light": [],
+    "time": []
   };
-  res.send(JSON.stringify(data));
+  var fetches = 50;
+  try {
+    fetches = parseInt(req.query.fetches);
+  } catch (e) { }
+
+  Metrics
+    .find()
+    .sort({ "time": -1 })
+    .limit(fetches)
+    .exec(function (err, metrics) {
+      //console.log(metrics);
+      for (var i = 0; i < metrics.length; i++) {
+        result["temperature"].push(metrics[i].temperature);
+        result["moisture"].push(metrics[i].moisture);
+        result["light"].push(metrics[i].light);
+        result["time"].push(metrics[i].time);
+      }
+      res.json(result);
+    });
 });
