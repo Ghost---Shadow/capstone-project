@@ -1,0 +1,45 @@
+<html>
+
+<head>
+    <title>Testing</title>
+    <script>
+        var fan = 0;
+        var pump = 0;
+        var light = 0;
+        function toggleFan() { fan = !fan; sendData(); }
+        function togglePump() { pump = !pump; sendData(); }
+        function toggleLight() { light = !light; sendData(); }
+        function sendData() {
+            var data = parseInt(fan << 2) | parseInt(pump << 1) | parseInt(light << 0);
+            console.log(data);
+            httpGetAsync('/force?f=' + String(data),function(res){console.log(res)});
+        }
+
+        function httpGetAsync(theUrl, callback) {
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.onreadystatechange = function () {
+                if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+                    callback(xmlHttp.responseText);
+            }
+            xmlHttp.open("GET", theUrl, true); // true for asynchronous 
+            xmlHttp.send(null);
+        }
+    </script>
+    <style>
+        input[type=checkbox] {
+            transform: scale(5);
+            margin: 10%;
+        }
+    </style>
+</head>
+
+<body>
+    <input type="checkbox" value="toggleFan" onclick="toggleFan()">Toggle Fan</input>
+    <br>
+    <input type="checkbox" value="togglePump" onclick="togglePump()">Toggle Pump</input>
+    <br>
+    <input type="checkbox" value="toggleLight" onclick="toggleLight()">Toggle Light</input>
+    <br>
+</body>
+
+</html>

@@ -5,10 +5,6 @@
 #define PIN_MOISTURE 2
 #define PIN_LDR 3
 
-#define CALIBRATION_THERMOMETER 1.0f
-#define CALIBRATION_MOISTURE 1.0f
-#define CALIBRATION_LDR 1.0f
-
 #define PIN_FAN 6
 #define PIN_PUMP 7
 #define PIN_LAMP 8
@@ -105,12 +101,13 @@ String stringifyData(){
 }
 
 // Expected format 0 - 7 "b000" - "b111"
+// FAN-PUMP-LAMP
 void parseAndServiceRequest(String request){
   int r = request.toInt();
   
-  digitalWrite(PIN_FAN ,r & (1<<0));
+  digitalWrite(PIN_FAN ,r & (1<<2));
   digitalWrite(PIN_PUMP,r & (1<<1));
-  digitalWrite(PIN_LAMP,r & (1<<2));
+  digitalWrite(PIN_LAMP,r & (1<<0));
 }
 
 void printWifiStatus() {

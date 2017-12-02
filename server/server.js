@@ -31,9 +31,9 @@ var forced = 0;
 // "0b000" = FAN-PUMP-LAMP
 function takeDecision(temperature, moisture, light) {
   var decision = 0;
-  decision |= temperature > 512 ? (1 << 0) : 0;
+  decision |= temperature > 512 ? (1 << 2) : 0;
   decision |= moisture > 512 ? (1 << 1) : 0;
-  decision |= light > 512 ? (1 << 2) : 0;
+  decision |= light > 512 ? (1 << 0) : 0;
   decision |= forced;
   return decision + "";
 }
@@ -117,10 +117,11 @@ app.get('/getJson', function (req, res) {
  * FAN - PUMP - LIGHT
  */
 app.get('/force', function (req, res) {
-  try{
+  try {
     forced = parseInt(req.query.f);
-    res.send(forced+"");
-  } catch(e) {
+    res.send(forced + "");
+    console.log("Forced: " + forced);
+  } catch (e) {
     forced = 0;
     res.send(e);
   }
