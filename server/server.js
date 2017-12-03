@@ -27,7 +27,10 @@ mongoose
 var Metrics = require('./models/Metrics.js');
 
 // Load cloud connection
-var cloud = require('./cloud.js')
+var cloud = require('./cloud.js');
+
+// Load decision module
+var decisionModule = require('./decision.js');
 
 // Forced on actuators
 var forced = 0;
@@ -41,16 +44,6 @@ var averages = {
   "time": []
 };
 
-// Take decision based on readings (TODO)
-// "b000" = FAN-PUMP-LAMP
-function takeDecision(temperature, moisture, light) {
-  var decision = 0;
-  decision |= temperature > 512 ? (1 << 2) : 0;
-  decision |= moisture > 512 ? (1 << 1) : 0;
-  decision |= light > 512 ? (1 << 0) : 0;
-  decision |= forced;
-  return decision + "";
-}
 /**
  * Converts array of dicts to dict of arrays
  * @param {array} metrics 
@@ -84,12 +77,12 @@ function uploadToCloud(temperature, moisture, light, time) {
   averages.light.push(light);
   averages.time.push(time);
 
-  if(averages.temperature.length > averageWindow){
+  if (averages.temperature.length > averageWindow) {
     r = {
-      'temperature':parseInt(getAverage(averages.temperature)),
-      'moisture':parseInt(getAverage(averages.moisture)),
-      'light':parseInt(getAverage(averages.light)),
-      'time':parseInt(getAverage(averages.time))
+      'temperature': parseInt(getAverage(averages.temperature)),
+      'moisture': parseInt(getAverage(averages.moisture)),
+      'light': parseInt(getAverage(averages.light)),
+      'time': parseInt(getAverage(averages.time))
     };
     cloud.addRow(r);
     console.log(r);
@@ -100,8 +93,10 @@ function uploadToCloud(temperature, moisture, light, time) {
   }
 }
 
-function getAverage(x){
-  return x.reduce(function(a,b){return a+b})/x.length;
+function getAverage(x) {
+  return x.reduce(function (a, b) {
+    return a + b
+  }) / x.length;
 }
 
 /**
@@ -136,11 +131,11 @@ app.get('/upload', function (req, res) {
   var light = parseInt(req.query.l);
   var time = Math.floor(new Date() / 1000);
 
-  uploadToDatabase(temperature, moisture, light,time);
-  uploadToCloud(temperature, moisture, light,time);
-  decision = takeDecision(temperature, moisture, light);
+  uploadToDatabase(temperature, moisture, light, time);
+  uploadToCloud(temperature, moisture, light, time);
+  decision = decisionModule.takeDecision(temperature, moisture, light, forced);
 
-  console.log("T: %d\tM: %d\tL: %d\t%s - %d", temperature, moisture, light, decision,time);
+  console.log("T: %d\tM: %d\tL: %d\t%s - %d", temperature, moisture, light, decision, time);
   res.send(decision);
 });
 
