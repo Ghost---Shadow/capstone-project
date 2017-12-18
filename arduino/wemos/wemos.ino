@@ -1,13 +1,13 @@
 #include <SPI.h>
-#include <WiFi.h>
+#include "ESP8266WiFi.h"
 
 #define PORT 8080
-#define SERVER String("127.0.0.1")
+#define SERVER String("192.168.43.100")
 #define INTERVAL 1000
 #define CONNECTION_INTERVAL 5000
 
-char ssid[] = "NetworkName"; 
-char pass[] = "NetPassword123";    
+char ssid[] = "Redmi"; 
+char pass[] = "123123122";    
 int keyIndex = 0;    
 int lastConnectionTime = 0;
 
@@ -19,23 +19,8 @@ void setup() {
   Serial.begin(115200);
   
   while (!Serial);    
- 
-  if (WiFi.status() == WL_NO_SHIELD) {
-    //Serial.println("WiFi shield not present");
-    // don't continue:
-    while(true);
-  }
- 
-  // attempt to connect to Wifi network:
-  while (status != WL_CONNECTED) {
-    //Serial.print("Attempting to connect to SSID: ");
-    //Serial.println(ssid);
-    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:    
-    status = WiFi.begin(ssid, pass);
- 
-    // wait 5 seconds for connection:
-    delay(CONNECTION_INTERVAL);
-  }
+  WiFi.begin(ssid, pass);
+  delay(5000);
   //Serial.println("Connected to wifi");
   //printWifiStatus(); 
 }
@@ -46,9 +31,9 @@ void loop() {
   // Read data from server
   while (client.available()) {
     char c = client.read();
-    request += c;
+    request = c;
   }
-
+  
   // If server sent request then transmit to uno
   if(request.length() > 0){
     Serial.print(request);    
@@ -57,9 +42,9 @@ void loop() {
   // Read all data from uno
   String data = "";
   while(Serial.available()){
-    data += Serial.read();    
+    char a = Serial.read();
+    data+=a;    
   }  
-
   // If uno sent data then transmit
   if(data.length() > 0){
     httpRequest(data);
@@ -75,7 +60,7 @@ void httpRequest(String data) {
 
   // if there's a successful connection:
   if (client.connect(SERVER.c_str(), PORT)) {
-    Serial.println("connecting...");
+    //Serial.println("connecting...");
     // send the HTTP PUT request:
     client.println("GET "+data+" HTTP/1.1");
     client.println("Host: "+SERVER);
@@ -87,7 +72,7 @@ void httpRequest(String data) {
     lastConnectionTime = millis();
   } else {
     // if you couldn't make a connection:
-    Serial.println("connection failed");
+    //Serial.println("connection failed");
   }
 }
 

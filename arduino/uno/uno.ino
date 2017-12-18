@@ -1,9 +1,10 @@
 #include <SoftwareSerial.h>
+#include<dht.h>
 
 // Sensors
-#define PIN_THERMOMETER 1
-#define PIN_MOISTURE 0
-#define PIN_LDR 1
+#define PIN_THERMOMETER 2
+#define PIN_MOISTURE A0
+#define PIN_LDR A1
 
 // Actuators
 #define PIN_FAN 5
@@ -17,8 +18,10 @@ SoftwareSerial mySerial(RX,TX);
 
 #define INTERVAL 1000
 
+dht DHT;
+
 void setup(){
-    Serial.begin(9600);
+    Serial.begin(115200);
 
     pinMode(PIN_FAN,OUTPUT);
     pinMode(PIN_PUMP,OUTPUT); // TODO: Servo
@@ -42,7 +45,8 @@ void parseAndServiceRequest(String request){
 String stringifyData(){
     String allData = "";
     // TODO: Thermometer
-    int t = 0;//analogRead(PIN_THERMOMETER);
+    DHT.read11(PIN_THERMOMETER);
+    float t = DHT.temperature;
     int m = analogRead(PIN_MOISTURE);
     int l = analogRead(PIN_LDR);
     allData = "/upload?t="+String(t)+"&m="+String(m)+"&l="+String(l);
