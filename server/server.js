@@ -1,8 +1,9 @@
-var express = require('express');
-var app = express();
+const express = require('express');
+
+const app = express();
 
 // Listen to port 8080 http port
-app.listen(8080, function () {
+app.listen(8080, () => {
   console.log('Listening for connections');
 });
 
@@ -10,7 +11,7 @@ app.listen(8080, function () {
 app.use(express.static('public'));
 
 // Get Handle for MongoDB through mongoose
-var mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
 // Use native Node promises
 mongoose.Promise = global.Promise;
@@ -18,50 +19,54 @@ mongoose.Promise = global.Promise;
 // connect to MongoDB
 mongoose
   .connect('mongodb://localhost/CapstoneProject', {
-    useMongoClient: true
+    useMongoClient: true,
   })
   .then(() => console.log('Connection succesful'))
-  .catch((err) => console.error(err));
+  .catch(err => console.error(err));
 
 // Load the Metrics module
-var Metrics = require('./models/Metrics.js');
+const Metrics = require('./models/Metrics.js');
 
 // Load cloud connection
-var cloud = require('./cloud.js');
+const cloud = require('./cloud.js');
 
 // Load decision module
-var decisionModule = require('./decision.js');
+const decisionModule = require('./decision.js');
 
 // Forced on actuators
-var forced = 0;
+let forced = 0;
 
 // Moving average
-var averageWindow = 5
-var averages = {
-  "temperature": [],
-  "moisture": [],
-  "light": [],
-  "time": []
+const averageWindow = 5;
+const averages = {
+  temperature: [],
+  moisture: [],
+  light: [],
+  time: [],
 };
 
 /**
  * Converts array of dicts to dict of arrays
- * @param {array} metrics 
+ * @param {array} metrics
  */
 function reshape(metrics) {
-  var result = {
-    "temperature": [],
-    "moisture": [],
-    "light": [],
-    "time": []
+  const result = {
+    temperature: [],
+    moisture: [],
+    light: [],
+    time: [],
   };
-  for (var i = 0; i < metrics.length; i++) {
-    result["temperature"].push(metrics[i].temperature);
-    result["moisture"].push(metrics[i].moisture);
-    result["light"].push(metrics[i].light);
-    result["time"].push(metrics[i].time);
+  for (let i = 0; i < metrics.length; i += 1) {
+    result.temperature.push(metrics[i].temperature);
+    result.moisture.push(metrics[i].moisture);
+    result.light.push(metrics[i].light);
+    result.time.push(metrics[i].time);
   }
   return result;
+}
+
+function getAverage(x) {
+  return x.reduce((a, b) => a + b) / x.length;
 }
 
 /**
@@ -78,25 +83,19 @@ function uploadToCloud(temperature, moisture, light, time) {
   averages.time.push(time);
 
   if (averages.temperature.length > averageWindow) {
-    r = {
-      'temperature': parseInt(getAverage(averages.temperature)),
-      'moisture': parseInt(getAverage(averages.moisture)),
-      'light': parseInt(getAverage(averages.light)),
-      'time': parseInt(getAverage(averages.time))
+    const row = {
+      temperature: parseInt(getAverage(averages.temperature), 10),
+      moisture: parseInt(getAverage(averages.moisture), 10),
+      light: parseInt(getAverage(averages.light), 10),
+      time: parseInt(getAverage(averages.time), 10),
     };
-    cloud.addRow(r);
-    console.log(r);
+    cloud.addRow(row);
+    console.log(row);
     averages.temperature = [];
     averages.moisture = [];
     averages.light = [];
     averages.time = [];
   }
-}
-
-function getAverage(x) {
-  return x.reduce(function (a, b) {
-    return a + b
-  }) / x.length;
 }
 
 /**
@@ -107,15 +106,15 @@ function getAverage(x) {
  * @param {Number} time Unix Epoch (seconds)
  */
 function uploadToDatabase(temperature, moisture, light, time) {
-  var newMetric = new Metrics({
-    "temperature": temperature,
-    "moisture": moisture,
-    "light": light,
-    "time": time
+  const newMetric = new Metrics({
+    temperature,
+    moisture,
+    light,
+    time,
   });
-  newMetric.save(function (err) {
-    if (err) return console.log(err);
-  })
+  newMetric.save((err) => {
+    if (err) { console.log(err); }
+  });
 }
 
 /**
@@ -125,17 +124,17 @@ function uploadToDatabase(temperature, moisture, light, time) {
  * m : moisture 0 - 1023
  * l : light 0 - 1023
  */
-app.get('/upload', function (req, res) {
-  var temperature = parseInt(req.query.t);
-  var moisture = parseInt(req.query.m);
-  var light = parseInt(req.query.l);
-  var time = Math.floor(new Date() / 1000);
+app.get('/upload', (req, res) => {
+  const temperature = parseInt(req.query.t, 10);
+  const moisture = parseInt(req.query.m, 10);
+  const light = parseInt(req.query.l, 10);
+  const time = Math.floor(new Date() / 1000);
 
   uploadToDatabase(temperature, moisture, light, time);
   uploadToCloud(temperature, moisture, light, time);
-  decision = decisionModule.takeDecision(temperature, moisture, light, forced);
+  const decision = decisionModule.takeDecision(temperature, moisture, light, forced);
 
-  console.log("T: %d\tM: %d\tL: %d\t%s - %d", temperature, moisture, light, decision, time);
+  console.log('T: %d\tM: %d\tL: %d\t%s - %d', temperature, moisture, light, decision, time);
   res.send(decision);
 });
 
@@ -143,7 +142,7 @@ app.get('/upload', function (req, res) {
  * Expected format
  * /getJson?fetches=50
  * fetches: Number of records to fetch
- * 
+ *
  * Output JSON Format
  * {
  *  "temperature":[355,233,...,343],
@@ -152,20 +151,22 @@ app.get('/upload', function (req, res) {
  *  "time":[355,233,...,343],
  * }
  */
-app.get('/getJson', function (req, res) {
-  var fetches = 50;
+app.get('/getJson', (req, res) => {
+  let fetches = 50;
   try {
-    fetches = parseInt(req.query.fetches);
-  } catch (e) {}
+    fetches = parseInt(req.query.fetches, 10);
+  } catch (e) {
+    throw e;
+  }
 
   Metrics
     .find()
     .sort({
-      "time": -1
+      time: -1,
     })
     .limit(fetches)
-    .exec(function (err, metrics) {
-      result = reshape(metrics);
+    .exec((err, metrics) => {
+      const result = reshape(metrics);
       res.json(result);
     });
 });
@@ -174,7 +175,7 @@ app.get('/getJson', function (req, res) {
  * Expected format
  * /getCloud?fetches=10
  * fetches: Number of records to fetch
- * 
+ *
  * Output JSON Format
  * {
  *  "temperature":[355,233,...,343],
@@ -183,14 +184,16 @@ app.get('/getJson', function (req, res) {
  *  "time":[355,233,...,343],
  * }
  */
-app.get('/getCloud', function (req, res) {
-  var fetches = 10;
+app.get('/getCloud', (req, res) => {
+  let fetches = 10;
   try {
-    fetches = parseInt(req.query.fetches);
-  } catch (e) {}
+    fetches = parseInt(req.query.fetches, 10);
+  } catch (e) {
+    throw e;
+  }
 
-  cloud.getLastN(fetches, function (rows) {
-    result = reshape(rows);
+  cloud.getLastN(fetches, (rows) => {
+    const result = reshape(rows);
     res.json(result);
   });
 });
@@ -201,11 +204,11 @@ app.get('/getCloud', function (req, res) {
  * b000 to b111
  * FAN - PUMP - LIGHT
  */
-app.get('/force', function (req, res) {
+app.get('/force', (req, res) => {
   try {
-    forced = parseInt(req.query.f);
-    res.send(forced + "");
-    console.log("Forced: " + forced);
+    forced = parseInt(req.query.f, 10);
+    res.send(`${forced}`);
+    console.log(`Forced: ${forced}`);
   } catch (e) {
     forced = 0;
     res.send(e);
