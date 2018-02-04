@@ -1,6 +1,11 @@
+'''
+Trains the model and saves it
+'''
+import time
+
 import matplotlib.pyplot as plt
 import numpy as np
-import time
+
 from keras.models import Sequential
 from keras.layers.core import Dense, Activation, Dropout
 from keras.layers.recurrent import LSTM
@@ -24,6 +29,9 @@ for observation in data:
     for index in range(len(observation) - sequence_length):
         windowed_data.append(observation[index: index + sequence_length])
 windowed_data = np.array(windowed_data)
+
+# Free up memory
+del data
 
 # Partition data into train and test
 test_samples = 1000
@@ -58,7 +66,9 @@ model.add(Activation("linear"))
 # Compile the model
 start = time.time()
 model.compile(loss="mse", optimizer="rmsprop")
-print ("Compilation Time : ", time.time() - start)
+print("Compilation Time : ", time.time() - start)
+
+# Train the compiled model
 epochs = 1
 model.fit(x_train,
           y_train,
@@ -66,8 +76,13 @@ model.fit(x_train,
           epochs=epochs,
           validation_split=0.05)
 
+# Save the model
+model.save('./my_model.h5') 
+
+# Predict on test set
 predicted = model.predict(x_test)
 
+# Calculate MSE, predicted vs actual
 test_error = np.square(predicted - y_test).mean()
 print('MSE test: ', test_error)
 
