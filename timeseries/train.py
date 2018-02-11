@@ -11,8 +11,11 @@ from keras.layers.core import Dense, Activation, Dropout
 from keras.layers.recurrent import LSTM
 np.random.seed(1234)
 
+DATASET = './data/temperature_values.npy'
+MODEL_NAME = './temperature_model.h5'
+
 # Load the dataset
-data = np.load('./data/light_values.npy')
+data = np.load(DATASET)
 
 # Calculate data moments
 data_mean = data.mean()
@@ -77,7 +80,7 @@ model.fit(x_train,
           validation_split=0.05)
 
 # Save the model
-model.save('./my_model.h5') 
+model.save(MODEL_NAME) 
 
 # Predict on test set
 predicted = model.predict(x_test)
