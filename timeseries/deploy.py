@@ -9,53 +9,72 @@ from flask import request
 import numpy as np
 
 from keras.models import load_model
-model = load_model('./my_model.h5')
 
-# Calculate data moments
-data = np.load('./data/light_values.npy')
-data_mean = float(data.mean())
-data_std = float(data.std())
-print('Moments:',data_mean, data_std)
+LIGHT_MODEL_PATH = './light_model.h5'
+TEMPERATURE_MODEL_PATH = './temperature_model.h5'
+
+MOMENTS_PATH = './data/moments.json'
+
+def loadModels():
+    light_model = load_model(LIGHT_MODEL_PATH)
+    temperature_model = load_model(TEMPERATURE_MODEL_PATH)
+
+    return {
+        'light':light_model,
+        'temperature':temperature_model
+    }
+
+models = loadModels()
+
+with open(MOMENTS_PATH) as f:
+    MOMENTS = json.load(f)
 
 app = Flask(__name__)
 
-def normalize(arr):
+def normalize(model_name, arr):
     '''
     Normalizes array using population moments
     '''
-    arr -= data_mean
-    arr /= data_std
+    arr -= MOMENTS[model_name]['mean']
+    arr /= MOMENTS[model_name]['std']
     return arr
 
-def denormalize(arr):
+def denormalize(model_name, arr):
     '''
     Denormalizes array using population moments
     '''
-    arr *= data_std
-    arr += data_mean
+    arr *= MOMENTS[model_name]['std']
+    arr += MOMENTS[model_name]['mean']
     return arr
 
-def getPrediction(values):
+def getPrediction(model_name, values):
     '''
     Uses the model to predict values and returns a JSON
     '''
     try:
+        model = models[model_name]
         values = np.array(values, dtype=np.float32)
-        values = normalize(values)
+        values = normalize(model_name, values)
         print('Input:', values)
         values = values.reshape([1,9,1])
         result = model.predict(values).tolist()[0][0]
-        result = denormalize(result)
+        result = denormalize(model_name, result)
         print('Result:',result)
         json_string = json.dumps({'result': result})
     except Exception as e:
         json_string = json.dumps({'result': str(e)})
     return json_string
 
-@app.route("/", methods=['POST'])
-def hello():
+@app.route("/light", methods=['POST'])
+def lightRoute():
     dataDict = request.get_json(force=True)
-    responseJson = getPrediction(np.array(dataDict['values']))
+    responseJson = getPrediction('light', np.array(dataDict['values']))
+    return responseJson
+
+@app.route("/temperature", methods=['POST'])
+def temperatureRoute():
+    dataDict = request.get_json(force=True)
+    responseJson = getPrediction('temperature', np.array(dataDict['values']))
     return responseJson
 
 if __name__ == "__main__":
