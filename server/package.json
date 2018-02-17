@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "description": "",
   "scripts": {
-    "start": "nodemon node server.js"
+    "start": "nodemon node src/server.js"
   },
   "dependencies": {
     "express": "^4.14.0",
@@ -15,6 +15,7 @@
     "eslint": "^4.17.0",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0",
+    "jest": "^22.1.4",
     "nodemon": "^1.15.0"
   }
 }

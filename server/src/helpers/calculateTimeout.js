@@ -5,7 +5,7 @@ const rp = require('request-promise');
  * @param {object} Object containing last 6 readings
  * @returns {string} Number of cycles to sleep (1-6)
 */
-function calculateTimeout(readings) {
+const calculateTimeout = (readings) => {
   const slicedQuery = {
     temperature: readings.temperature,
     moisture: readings.moisture,
@@ -28,6 +28,6 @@ function calculateTimeout(readings) {
       console.log(err);
       return '1';
     });
-}
+};
 
 module.exports = calculateTimeout;

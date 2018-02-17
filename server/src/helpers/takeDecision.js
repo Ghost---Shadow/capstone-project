@@ -18,4 +18,4 @@ function takeDecision(temperature, moisture, light, forced) {
   return `${decision}`;
 }
 
-module.exports.takeDecision = takeDecision;
+module.exports = takeDecision;
