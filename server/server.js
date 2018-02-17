@@ -25,13 +25,16 @@ mongoose
   .catch(err => console.error(err));
 
 // Load the Metrics module
-const Metrics = require('./models/Metrics.js');
+const Metrics = require('./models/Metrics');
 
 // Load cloud connection
-const cloud = require('./cloud.js');
+const cloud = require('./cloud');
 
 // Load decision module
-const decisionModule = require('./decision.js');
+const decisionModule = require('./decision');
+
+// Load the timeout module
+const calculateTimeout = require('./calculateTimeout');
 
 // Forced on actuators
 let forced = 0;
@@ -118,6 +121,31 @@ function uploadToDatabase(temperature, moisture, light, time) {
 }
 
 /**
+ * Queries the mongodb server and returns a promise which
+ * has the last 6 readings
+ *
+ * Output JSON Format
+ * {
+ *  "temperature":[355,233,...,343],
+ *  "moisture":[355,233,...,343],
+ *  "light":[355,233,...,343],
+ *  "time":[355,233,...,343],
+ * }
+ * @param {integer} fetches
+ * @returns {Object}
+ */
+function fetchReadingsFromDatabase(fetches) {
+  return Metrics
+    .find()
+    .sort({
+      time: -1,
+    })
+    .limit(fetches)
+    .exec((err, metrics) => (metrics))
+    .then(metrics => reshape(metrics));
+}
+
+/**
  * Expected format
  * /upload?t=1023&m=1023&l=1023
  * t : temperature 0 - 1023
@@ -134,13 +162,21 @@ app.get('/upload', (req, res) => {
   uploadToCloud(temperature, moisture, light, time);
   const decision = decisionModule.takeDecision(temperature, moisture, light, forced);
 
-  console.log('T: %d\tM: %d\tL: %d\t%s - %d', temperature, moisture, light, decision, time);
-  res.send(decision);
+  fetchReadingsFromDatabase(6)
+    .then(calculateTimeout)
+    .then((timeout) => {
+      console.log(
+        'T: %d\tM: %d\tL: %d\t%s%s - %d',
+        temperature, moisture, light, decision, timeout, time,
+      );
+      res.send(`${decision}${timeout}`);
+    });
 });
+
 
 /**
  * Expected format
- * /getJson?fetches=50
+ * /getJson?fetches=10
  * fetches: Number of records to fetch
  *
  * Output JSON Format
@@ -152,21 +188,14 @@ app.get('/upload', (req, res) => {
  * }
  */
 app.get('/getJson', (req, res) => {
-  let fetches = 50;
+  let fetches = 10;
   try {
     fetches = parseInt(req.query.fetches, 10);
   } catch (e) {
     throw e;
   }
-
-  Metrics
-    .find()
-    .sort({
-      time: -1,
-    })
-    .limit(fetches)
-    .exec((err, metrics) => {
-      const result = reshape(metrics);
+  fetchReadingsFromDatabase(fetches)
+    .then((result) => {
       res.json(result);
     });
 });
