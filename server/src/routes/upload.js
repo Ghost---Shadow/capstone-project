@@ -18,8 +18,13 @@ const upload = (req, res) => {
   const light = parseInt(req.query.l, 10);
   const time = Math.floor(new Date() / 1000);
 
+  // Asynchronously uploads the readings to the database
   uploadToDatabase(temperature, moisture, light, time);
+
+  // Asynchronously uploads the moving average to the cloud
   uploadToCloud(temperature, moisture, light, time);
+
+  // Take the decision
   const decision = takeDecision(temperature, moisture, light, forced.value);
 
   fetchReadingsFromDatabase(6)
