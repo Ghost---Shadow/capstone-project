@@ -3,5 +3,8 @@ module.exports = {
     "env":{
         "es6":true,
         "jest":true,
+    },
+    "rules":{
+        "linebreak-style": ["error", "windows"]
     }
 };
