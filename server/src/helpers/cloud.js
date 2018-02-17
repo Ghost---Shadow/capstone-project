@@ -2,9 +2,10 @@ const GoogleSpreadsheet = require('google-spreadsheet');
 const creds = require('../constants/client_secret.json');
 
 const doc = new GoogleSpreadsheet('1WPPUAZ60XPeXfB8TO7Ybi3HczcaFDodZuY5u04DXCFY');
+// https://docs.google.com/spreadsheets/d/1WPPUAZ60XPeXfB8TO7Ybi3HczcaFDodZuY5u04DXCFY/edit?usp=sharing
 
-// Moving average
-const averageWindow = 5;
+const { AVERAGE_WINDOW } = require('../constants/defaults');
+
 const averages = {
   temperature: [],
   moisture: [],
@@ -62,7 +63,7 @@ function uploadToCloud(temperature, moisture, light, time) {
   averages.light.push(light);
   averages.time.push(time);
 
-  if (averages.temperature.length > averageWindow) {
+  if (averages.temperature.length > AVERAGE_WINDOW) {
     const row = {
       temperature: parseInt(getAverage(averages.temperature), 10),
       moisture: parseInt(getAverage(averages.moisture), 10),
