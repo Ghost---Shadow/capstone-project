@@ -1,99 +1,93 @@
-'''
-Trains the model and saves it
-'''
-import time
-
-import matplotlib.pyplot as plt
+from keras.layers import Input, LSTM, RepeatVector
+from keras.models import Model
 import numpy as np
+import matplotlib.pyplot as plt
 
-from keras.models import Sequential
-from keras.layers.core import Dense, Activation, Dropout
-from keras.layers.recurrent import LSTM
-np.random.seed(1234)
+from utils import normalize
 
-DATASET = './data/temperature_values.npy'
-MODEL_NAME = './temperature_model.h5'
+TIME_STEPS = 6
+INPUT_DIM = 3
+LATENT_DIM = 250
+EPOCHS = 10
+BATCH_SIZE = 100
+MODEL_NAME = './model.h5'
 
 # Load the dataset
-data = np.load(DATASET)
+dataset = np.load('./data/dataset.npy')
 
-# Calculate data moments
-data_mean = data.mean()
-data_std = data.std()
+# Normalize the dataset
+dataset = normalize(dataset)
 
-# Normalize the data
-data -= data_mean
-data /= data_std
+# [type, batch, sequence] to [batch, sequence, type]
+dataset = np.transpose(dataset,[1, 2, 0])
 
 # Window the data
 windowed_data = []
-sequence_length = 10
-for observation in data:
-    for index in range(len(observation) - sequence_length):
-        windowed_data.append(observation[index: index + sequence_length])
+for observation in dataset:
+    for index in range(len(observation) - TIME_STEPS * 2):
+        windowed_data.append(observation[index: index + TIME_STEPS * 2])
 windowed_data = np.array(windowed_data)
 
 # Free up memory
-del data
+del dataset
 
 # Partition data into train and test
 test_samples = 1000
 np.random.shuffle(windowed_data)
 
-x_train = np.expand_dims(windowed_data[test_samples:, :-1],2)
-x_test = np.expand_dims(windowed_data[:test_samples, :-1],2)
+x_train = windowed_data[test_samples:, :-TIME_STEPS]
+x_test = windowed_data[:test_samples, :-TIME_STEPS]
 
-y_train = windowed_data[test_samples:, -1]
-y_train = y_train.reshape([len(windowed_data) - test_samples,1])
-y_test = windowed_data[:test_samples, -1]
-y_test = y_test.reshape([test_samples,1])
+y_train = windowed_data[test_samples:, -TIME_STEPS:]
+y_test = windowed_data[:test_samples, -TIME_STEPS:]
 
-# Build model
-model = Sequential()
-layers = [1, 50, 100, 1]
-model.add(LSTM(
-        layers[1],
-        input_shape=(None, 1),
-        return_sequences=True))
-#model.add(Dropout(0.2))
+print('Train shape:', x_train.shape, y_train.shape)
+print('Test shape:', x_test.shape, y_test.shape)
 
-model.add(LSTM(
-        layers[2],
-        return_sequences=False))
-#model.add(Dropout(0.2))
+inputs = Input(shape=(TIME_STEPS, INPUT_DIM))
+encoded = LSTM(LATENT_DIM)(inputs)
+decoded = RepeatVector(TIME_STEPS)(encoded)
+decoded = LSTM(INPUT_DIM, return_sequences=True)(decoded)
+sequence_autoencoder = Model(inputs, decoded)
 
-model.add(Dense(
-        layers[3]))
-model.add(Activation("linear"))
+sequence_autoencoder.compile(loss='mse', optimizer='adam')
 
-# Compile the model
-start = time.time()
-model.compile(loss="mse", optimizer="rmsprop")
-print("Compilation Time : ", time.time() - start)
+sequence_autoencoder.summary()
 
-# Train the compiled model
-epochs = 1
-model.fit(x_train,
+sequence_autoencoder.fit(x_train,
           y_train,
-          batch_size=64,
-          epochs=epochs,
+          batch_size=BATCH_SIZE,
+          epochs=EPOCHS,
           validation_split=0.05)
 
 # Save the model
-model.save(MODEL_NAME) 
+sequence_autoencoder.save(MODEL_NAME) 
 
 # Predict on test set
-predicted = model.predict(x_test)
+predicted = sequence_autoencoder.predict(x_test)
 
 # Calculate MSE, predicted vs actual
-test_error = np.square(predicted - y_test).mean()
+test_error = np.sum(np.square(predicted - y_test).mean())
 print('MSE test: ', test_error)
 
-try:
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.plot(y_test[:100, 0])
-    plt.plot(predicted[:100, 0])
-    plt.show()
-except Exception as e:
-    print (str(e))
+def plotAll():
+    try:
+        plt.close('all')
+        
+        plt.figure(1)
+        plt.plot(y_test[:100, 1, 0])
+        plt.plot(predicted[:100, 1, 0])
+
+        plt.figure(2)
+        plt.plot(y_test[:100, 5, 1])
+        plt.plot(predicted[:100, 5, 1])
+
+        plt.figure(3)
+        plt.plot(y_test[:100, 1, 2])
+        plt.plot(predicted[:100, 1, 2])
+        
+        plt.show()
+    except Exception as e:
+        print (str(e))
+
+plotAll()

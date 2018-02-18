@@ -5,77 +5,57 @@ import json
 
 from flask import Flask
 from flask import request
+from flask import Response
 
 import numpy as np
 
 from keras.models import load_model
 
-LIGHT_MODEL_PATH = './light_model.h5'
-TEMPERATURE_MODEL_PATH = './temperature_model.h5'
+from utils import normalize, denormalize
 
-MOMENTS_PATH = './data/moments.json'
-
-def loadModels():
-    light_model = load_model(LIGHT_MODEL_PATH)
-    temperature_model = load_model(TEMPERATURE_MODEL_PATH)
-
-    return {
-        'light':light_model,
-        'temperature':temperature_model
-    }
-
-models = loadModels()
-
-with open(MOMENTS_PATH) as f:
-    MOMENTS = json.load(f)
+# Load the keras model
+MODEL_PATH = './model.h5'
+model = load_model(MODEL_PATH)
+print('model loaded')
 
 app = Flask(__name__)
 
-def normalize(model_name, arr):
-    '''
-    Normalizes array using population moments
-    '''
-    arr -= MOMENTS[model_name]['mean']
-    arr /= MOMENTS[model_name]['std']
-    return arr
-
-def denormalize(model_name, arr):
-    '''
-    Denormalizes array using population moments
-    '''
-    arr *= MOMENTS[model_name]['std']
-    arr += MOMENTS[model_name]['mean']
-    return arr
-
-def getPrediction(model_name, values):
+def getPrediction(values):
     '''
     Uses the model to predict values and returns a JSON
     '''
     try:
-        model = models[model_name]
-        values = np.array(values, dtype=np.float32)
-        values = normalize(model_name, values)
+        values = np.array([values['light'],
+                           values['moisture'],
+                           values['temperature']], dtype=np.float32)
+
+        values = normalize(values)
+        values = values.transpose([1,0])
+        values = values.reshape([1,6,3])
         print('Input:', values)
-        values = values.reshape([1,9,1])
-        result = model.predict(values).tolist()[0][0]
-        result = denormalize(model_name, result)
+        
+        result = model.predict(values)
+
+        result = result.reshape([6,3])
+        result = result.transpose([1,0])
+        result = denormalize(result)
+        result = result[:,::-1]
+        result = result.tolist()
         print('Result:',result)
-        json_string = json.dumps({'result': result})
+        
+        result = { 'light': result[0],
+                   'moisture': result[1],
+                   'temperature': result[2]}
+        json_string = json.dumps(result)
     except Exception as e:
         json_string = json.dumps({'result': str(e)})
     return json_string
 
-@app.route("/light", methods=['POST'])
-def lightRoute():
+@app.route("/", methods=['POST'])
+def baseRoute():
     dataDict = request.get_json(force=True)
-    responseJson = getPrediction('light', np.array(dataDict['values']))
-    return responseJson
-
-@app.route("/temperature", methods=['POST'])
-def temperatureRoute():
-    dataDict = request.get_json(force=True)
-    responseJson = getPrediction('temperature', np.array(dataDict['values']))
-    return responseJson
+    responseJson = getPrediction(dataDict)
+    return Response(responseJson, mimetype='application/json') 
 
 if __name__ == "__main__":
     app.run()

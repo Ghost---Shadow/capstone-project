@@ -13,11 +13,11 @@ temperature_values = [None for _ in range(DATA_SIZE)]
 
 for i in range(DATA_SIZE):
     light_values[i] = np.array([analog_gen(i) for i in np.linspace(0,24,READINGS)])
-    light_values[i] += np.random.rand(READINGS) * 25
+    light_values[i] += np.random.rand(READINGS) * 2
     ##plt.plot(light_values[i])
     
     moisture_values[i] = np.array([analog_gen(i) for i in np.linspace(0,24,READINGS)])
-    moisture_values[i] += np.random.rand(READINGS) * 50
+    moisture_values[i] += np.random.rand(READINGS) * 2
     ##plt.plot(moisture_values[i])
     
     temperature_values[i] = [temperature_gen(i) for i in np.linspace(0,24,READINGS)]
