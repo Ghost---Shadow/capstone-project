@@ -31,7 +31,7 @@ void loop() {
   // Read data from server
   while (client.available()) {
     char c = client.read();
-    request = c;
+    request += c;
   }
   
   // If server sent request then transmit to uno

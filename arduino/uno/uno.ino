@@ -16,7 +16,7 @@
 #define TX 11
 SoftwareSerial mySerial(RX,TX);
 
-#define INTERVAL 1000
+int INTERVAL = 1000;
 
 dht DHT;
 
@@ -35,6 +35,8 @@ void setup(){
 // FAN-PUMP-LAMP
 void parseAndServiceRequest(String request){
     int r = request.toInt();
+	INTERVAL = (r % 10) * 1000;
+	r /= 10;
 
     digitalWrite(PIN_FAN ,r & (1<<2));
     digitalWrite(PIN_PUMP,r & (1<<1)); // TODO: Servo
