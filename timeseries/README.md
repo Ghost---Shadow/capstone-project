@@ -2,6 +2,10 @@
 
 This module is used to predict the values of sensors.
 
+# Installation
+
+Run `pip install -r requirements.txt` while in the timeseries folder.
+
 # Requirements
 
 1. Python 3.5 or similar
