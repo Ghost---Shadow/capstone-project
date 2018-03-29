@@ -1,7 +1,10 @@
-const { uploadToDatabase, fetchReadingsFromDatabase } = require('../helpers/database');
+const {
+  uploadToDatabase,
+  //  fetchReadingsFromDatabase,
+} = require('../helpers/database');
 const { uploadToCloud } = require('../helpers/cloud');
 const takeDecision = require('../helpers/takeDecision');
-const calculateTimeout = require('../helpers/calculateTimeout');
+// const calculateTimeout = require('../helpers/calculateTimeout');
 
 const { forced } = require('./force');
 
@@ -27,15 +30,16 @@ const upload = (req, res) => {
   // Take the decision
   const decision = takeDecision(temperature, moisture, light, forced.value);
 
-  fetchReadingsFromDatabase(6)
-    .then(calculateTimeout)
-    .then((timeout) => {
-      console.log(
-        'T: %d\tM: %d\tL: %d\t%s%s - %d',
-        temperature, moisture, light, decision, timeout, time,
-      );
-      res.send(`${decision}${timeout}`);
-    });
+  // fetchReadingsFromDatabase(6)
+  //   .then(calculateTimeout)
+  //   .then((timeout) => {
+  //     console.log(
+  //       'T: %d\tM: %d\tL: %d\t%s%s - %d',
+  //       temperature, moisture, light, decision, timeout, time,
+  //     );
+  //     res.send(`${decision}${timeout}`);
+  //   });
+  res.send(decision.toString());
 };
 
 module.exports.upload = upload;
