@@ -6,8 +6,8 @@
 #define INTERVAL 1000
 #define CONNECTION_INTERVAL 5000
 
-char ssid[] = "Redmi"; 
-char pass[] = "123123122";    
+char ssid[] = "Arjit's iPhone"; 
+char pass[] = "arjit111";    
 int keyIndex = 0;    
 int lastConnectionTime = 0;
 
