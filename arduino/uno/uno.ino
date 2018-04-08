@@ -1,5 +1,6 @@
 #include <SoftwareSerial.h>
 #include<dht.h>
+#include<Servo.h>
 
 // Sensors
 #define PIN_THERMOMETER 2
@@ -19,7 +20,7 @@ SoftwareSerial mySerial(RX,TX);
 int INTERVAL = 1000;
 
 dht DHT;
-
+Servo myservo;
 void setup(){
     Serial.begin(115200);
 
@@ -27,6 +28,8 @@ void setup(){
     pinMode(PIN_PUMP,OUTPUT); // TODO: Servo
     pinMode(PIN_LAMP,OUTPUT);
 
+    myservo.attach(3);
+    myservo.write(120);
     // Serial to wemos
     mySerial.begin(115200);
 }
@@ -39,7 +42,12 @@ void parseAndServiceRequest(String request){
 	r /= 10;
 
     digitalWrite(PIN_FAN ,r & (1<<2));
-    digitalWrite(PIN_PUMP,r & (1<<1)); // TODO: Servo
+    if(r& (1<<1)){
+      myservo.write(0);
+    }
+    else{
+      myservo.write(120);
+    }
     digitalWrite(PIN_LAMP,r & (1<<0));
 } 
 
