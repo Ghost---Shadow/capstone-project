@@ -39,7 +39,7 @@ const upload = (req, res) => {
       .then((timeout) => {
         console.log(
           'T: %d\tM: %d\tL: %d\t%s%s - %d',
-          temperature, moisture, light, decision, timeout, time,
+          temperature, moisture, light, decision, timeout, time
         );
         res.send(`${decision}${timeout}`);
       });

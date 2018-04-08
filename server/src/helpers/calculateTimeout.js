@@ -12,13 +12,13 @@ const calculateIterations = (currentReadings, predictedReadings) => {
   const currentDecision = takeDecision(
     currentReadings.temperature[length - 1],
     currentReadings.moisture[length - 1],
-    currentReadings.light[length - 1], 0,
+    currentReadings.light[length - 1], 0
   );
   for (let i = 0; i < predictedReadings.temperature.length; i += 1) {
     const decision = takeDecision(
       predictedReadings.temperature[i],
       predictedReadings.moisture[i],
-      predictedReadings.light[i], 0,
+      predictedReadings.light[i], 0
     );
     // console.log(currentDecision, decision);
     if (currentDecision !== decision) {
@@ -37,14 +37,14 @@ const calculateTimeout = (readings) => {
   const slicedQuery = {
     temperature: readings.temperature,
     moisture: readings.moisture,
-    light: readings.light,
+    light: readings.light
   };
 
   const options = {
     method: 'POST',
     uri: 'http://localhost:5000',
     body: slicedQuery,
-    json: true,
+    json: true
   };
 
   return rp(options)

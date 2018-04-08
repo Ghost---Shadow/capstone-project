@@ -2,7 +2,7 @@
 #include "ESP8266WiFi.h"
 
 #define PORT 8080
-#define SERVER String("192.168.43.100")
+#define SERVER String("172.20.10.2")
 #define INTERVAL 1000
 #define CONNECTION_INTERVAL 5000
 
