@@ -10,6 +10,12 @@ app.listen(8080, () => {
 // Host the public folder for testing
 app.use(express.static('public'));
 
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
 // Get Handle for MongoDB through mongoose
 const mongoose = require('mongoose');
 
